@@ -1,0 +1,80 @@
+---
+import Base from '../../../layouts/Base.astro';
+import TopThreeEditor from '../../../components/TopThreeEditor.vue';
+import TopFive from '../../../components/TopFive.astro';
+import {
+  getCategoryBySlug,
+  getOwnTopThree,
+  getTopFive,
+  getCategoryTopThrees,
+} from '../../../lib/queries';
+
+const { slug } = Astro.params;
+const { supabase, userId } = Astro.locals;
+
+if (!slug) return Astro.redirect('/c', 302);
+
+const category = await getCategoryBySlug(supabase, slug);
+if (!category) {
+  return new Response('Category not found', { status: 404 });
+}
+
+if (!userId) {
+  return Astro.redirect(`/login?next=${encodeURIComponent(`/c/${slug}/add`)}`, 302);
+}
+
+const [existing, rankings, all] = await Promise.all([
+  getOwnTopThree(supabase, userId, category.id),
+  getTopFive(supabase, category.id),
+  getCategoryTopThrees(supabase, category.id, 1000),
+]);
+
+const initialNames = existing
+  ? [0, 1, 2].map((i) => existing.entries.find((e) => e.rank === i + 1)?.item.name ?? '')
+  : ['', '', ''];
+---
+
+<Base
+  title={`Your top three ${category.name.toLowerCase()}`}
+  description={`Add your top three ${category.name.toLowerCase()}.`}
+  indexable={false}
+>
+  <div class="wrap">
+    <p class="small muted crumb">
+      <a href={`/c/${category.slug}`}>&larr; {category.name}</a>
+    </p>
+
+    <h1>{existing ? 'Edit your TopThree' : `Your top three ${category.name.toLowerCase()}`}</h1>
+    <p class="muted">
+      Order matters &mdash; your first place is worth three points towards the
+      category&rsquo;s TopFive, second two, third one.
+    </p>
+
+    <div class="card editor-card">
+      <TopThreeEditor
+        client:load
+        categoryId={category.id}
+        categorySlug={category.slug}
+        initialNames={initialNames}
+        initialNote={existing?.note ?? ''}
+        editing={!!existing}
+      />
+    </div>
+
+    <aside class="aside">
+      <TopFive rankings={rankings} contributors={all.length} />
+    </aside>
+  </div>
+</Base>
+
+<style>
+  .wrap { max-width: 38rem; margin: 0 auto; }
+
+  .crumb { margin: 0 0 0.5rem; }
+  .crumb a { color: var(--muted); text-decoration: none; }
+  .crumb a:hover { color: var(--text); }
+
+  .editor-card { margin: 1.5rem 0 2.5rem; }
+
+  .aside { opacity: 0.95; }
+</style>

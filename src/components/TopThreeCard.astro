@@ -1,0 +1,160 @@
+---
+import type { TopThreeEntry } from '../lib/types';
+
+interface Props {
+  entries: TopThreeEntry[];
+  note?: string | null;
+  /** Byline shown for lists on a category page. */
+  handle?: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  /** Category link shown for lists on a profile page. */
+  categoryName?: string;
+  categorySlug?: string;
+  updatedAt?: string;
+  editHref?: string;
+}
+
+const {
+  entries,
+  note,
+  handle,
+  displayName,
+  avatarUrl,
+  categoryName,
+  categorySlug,
+  updatedAt,
+  editHref,
+} = Astro.props;
+
+const stamp = updatedAt
+  ? new Date(updatedAt).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
+  : null;
+---
+
+<article class="card tt">
+  <header class="tt-head">
+    {
+      handle && (
+        <a class="byline" href={`/u/${handle}`}>
+          {avatarUrl ? (
+            <img class="avatar" src={avatarUrl} alt="" width="28" height="28" loading="lazy" />
+          ) : (
+            <span class="avatar avatar-fallback" aria-hidden="true">
+              {(displayName ?? handle).charAt(0).toUpperCase()}
+            </span>
+          )}
+          <span class="who">
+            <strong>{displayName ?? handle}</strong>
+            <span class="muted small">@{handle}</span>
+          </span>
+        </a>
+      )
+    }
+
+    {
+      categoryName && categorySlug && (
+        <h3 class="cat">
+          <a href={`/c/${categorySlug}`}>{categoryName}</a>
+        </h3>
+      )
+    }
+
+    <div class="tt-meta small muted">
+      {stamp && <time datetime={updatedAt}>{stamp}</time>}
+      {editHref && <a href={editHref}>Edit</a>}
+    </div>
+  </header>
+
+  <ol class="ranked-list">
+    {
+      entries.map((entry) => (
+        <li>
+          <span class={`rank rank-${entry.rank}`} aria-hidden="true">{entry.rank}</span>
+          <span class="name">{entry.item.name}</span>
+        </li>
+      ))
+    }
+  </ol>
+
+  {note && <p class="note small">{note}</p>}
+</article>
+
+<style>
+  .tt-head {
+    display: flex;
+    align-items: center;
+    /* Narrow cards can't fit byline + date + Edit on one line, so the meta
+       wraps. Tighten the row gap so the wrap reads as deliberate rather than
+       as a card that's laid out differently from the ones beside it. */
+    gap: 0.25rem 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+
+  .byline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--text);
+    min-width: 0;
+  }
+  .byline:hover strong { text-decoration: underline; }
+
+  .avatar {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--surface-alt);
+  }
+  .avatar-fallback {
+    display: inline-grid;
+    place-items: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .who {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    min-width: 0;
+  }
+
+  .cat {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+  }
+  .cat a { color: var(--text); text-decoration: none; }
+  .cat a:hover { text-decoration: underline; }
+
+  .tt-meta {
+    margin-left: auto;
+    display: flex;
+    gap: 0.75rem;
+    flex: none;
+  }
+
+  .name {
+    font-weight: 550;
+    overflow-wrap: anywhere;
+  }
+
+  .note {
+    margin: 0.75rem 0 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-style: italic;
+  }
+</style>

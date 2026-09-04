@@ -1,0 +1,42 @@
+{
+  "name": "topthree",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler dev",
+    "check": "astro check",
+    "deploy": "astro build && wrangler deploy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexlydiate/topthree.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/alexlydiate/topthree/issues"
+  },
+  "homepage": "https://github.com/alexlydiate/topthree#readme",
+  "private": "true",
+  "dependencies": {
+    "@astrojs/cloudflare": "^14.3.0",
+    "@astrojs/vue": "^7.0.2",
+    "@supabase/ssr": "^0.12.6",
+    "@supabase/supabase-js": "^2.115.0",
+    "astro": "^7.3.1",
+    "vue": "^3.5.42"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/node": "^26.4.1",
+    "supabase": "^2.116.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.129.0"
+  }
+}

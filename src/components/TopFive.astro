@@ -1,0 +1,87 @@
+---
+import type { Ranking } from '../lib/types';
+
+interface Props {
+  rankings: Ranking[];
+  contributors: number;
+}
+
+const { rankings, contributors } = Astro.props;
+---
+
+<section class="card topfive" aria-labelledby="topfive-heading">
+  <div class="topfive-head">
+    <h2 id="topfive-heading">The TopFive</h2>
+    <p class="small muted">
+      {
+        contributors === 0
+          ? 'Nothing here yet.'
+          : `Aggregated from ${contributors} TopThree${contributors === 1 ? '' : 's'}.`
+      }
+    </p>
+  </div>
+
+  {
+    rankings.length === 0 ? (
+      <p class="muted">
+        Once people start posting, the crowd&rsquo;s five favourites appear here.
+      </p>
+    ) : (
+      <ol class="ranked-list">
+        {rankings.map((row, i) => (
+          <li>
+            <span class={`rank rank-${i + 1}`} aria-hidden="true">{i + 1}</span>
+            <span class="name">{row.name}</span>
+            <span class="score small muted" title={`${row.firsts} first-place picks, ${row.seconds} second, ${row.thirds} third`}>
+              {row.score} pt{row.score === 1 ? '' : 's'}
+              <span class="mentions"> · {row.mentions} list{row.mentions === 1 ? '' : 's'}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    )
+  }
+
+  <p class="small muted formula">
+    Scoring: a first place is worth 3 points, second 2, third 1.
+  </p>
+</section>
+
+<style>
+  .topfive {
+    background: var(--surface-alt);
+  }
+
+  .topfive-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+  .topfive-head p { margin: 0; }
+
+  .name {
+    flex: 1;
+    font-weight: 550;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .score {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .formula {
+    margin: 0.75rem 0 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 30rem) {
+    .mentions { display: none; }
+  }
+</style>

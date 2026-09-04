@@ -1,0 +1,255 @@
+---
+import Nav from '../components/Nav.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Set false on pages that shouldn't be indexed (editor, callbacks). */
+  indexable?: boolean;
+}
+
+const { title, description, indexable = true } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+const fullTitle = title === 'TopThree' ? title : `${title} · TopThree`;
+const profile = Astro.locals.profile;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonical} />
+    {!indexable && <meta name="robots" content="noindex" />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <slot name="head" />
+  </head>
+
+  <body>
+    <Nav profile={profile} />
+    <main class="shell">
+      <slot />
+    </main>
+    <footer class="shell footer">
+      <p>
+        TopThree &mdash; everyone&rsquo;s top three, in every category.{' '}
+        <a href="/c">Browse categories</a>
+      </p>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --bg: #fbfaf8;
+    --surface: #ffffff;
+    --surface-alt: #f4f2ee;
+    --border: #e2ded6;
+    --text: #1b1a17;
+    --muted: #6b665c;
+    --accent: #b4531f;
+    --accent-soft: #fdf1e8;
+    --gold: #b98900;
+    --silver: #8a8a8f;
+    --bronze: #9c6238;
+    --radius: 10px;
+    --shell: 62rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161513;
+      --surface: #1f1e1b;
+      --surface-alt: #26241f;
+      --border: #34312b;
+      --text: #f0ece4;
+      --muted: #9d968a;
+      --accent: #e8834a;
+      --accent-soft: #2b201a;
+      --gold: #e0ab2b;
+      --silver: #b0b0b6;
+      --bronze: #c98a58;
+    }
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .shell {
+    width: 100%;
+    max-width: var(--shell);
+    margin: 0 auto;
+    padding: 0 1.25rem;
+  }
+
+  main.shell {
+    flex: 1;
+    padding-top: 2rem;
+    padding-bottom: 4rem;
+  }
+
+  h1, h2, h3 {
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    margin: 0 0 0.5rem;
+  }
+
+  h1 { font-size: clamp(1.75rem, 1.2rem + 2vw, 2.5rem); }
+  h2 { font-size: 1.3rem; }
+  h3 { font-size: 1.05rem; }
+
+  a {
+    color: var(--accent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  a:hover { text-decoration-thickness: 2px; }
+
+  p { margin: 0 0 1rem; }
+
+  .muted { color: var(--muted); }
+  .small { font-size: 0.875rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+
+  .stack > * + * { margin-top: 1rem; }
+  .grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-weight: 550;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .btn:hover { background: var(--surface-alt); }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { filter: brightness(1.07); background: var(--accent); }
+  .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+  input[type="text"],
+  input[type="search"],
+  textarea {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  .btn:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Rank chips: the one piece of visual identity the product really needs. */
+  .rank {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    background: var(--muted);
+  }
+  .rank-1 { background: var(--gold); }
+  .rank-2 { background: var(--silver); }
+  .rank-3 { background: var(--bronze); }
+  .rank-4, .rank-5 {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .ranked-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .ranked-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+  }
+  .ranked-list li + li { border-top: 1px solid var(--border); }
+
+  .footer {
+    border-top: 1px solid var(--border);
+    padding-top: 1.25rem;
+    padding-bottom: 2rem;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+  .footer p { margin: 0; }
+
+  .notice {
+    border: 1px solid var(--border);
+    background: var(--accent-soft);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    font-size: 0.925rem;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+</style>

@@ -1,0 +1,20 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Not found" description="That page doesn’t exist." indexable={false}>
+  <div class="wrap">
+    <h1>Not found</h1>
+    <p class="muted">
+      That category or profile doesn&rsquo;t exist &mdash; or it did and
+      doesn&rsquo;t any more.
+    </p>
+    <p>
+      <a class="btn btn-primary" href="/c">Browse categories</a>
+    </p>
+  </div>
+</Base>
+
+<style>
+  .wrap { max-width: 32rem; margin: 3rem auto; text-align: center; }
+</style>

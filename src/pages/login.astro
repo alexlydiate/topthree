@@ -1,0 +1,77 @@
+---
+import Base from '../layouts/Base.astro';
+import { PROVIDERS } from '../lib/types';
+import { safeNext } from '../lib/redirects';
+
+if (Astro.locals.userId) return Astro.redirect('/', 302);
+
+const next = safeNext(Astro.url.searchParams.get('next'), '/onboarding');
+const errorCode = Astro.url.searchParams.get('error');
+
+const MESSAGES: Record<string, string> = {
+  denied: 'That sign-in was cancelled.',
+  missing_code: 'The sign-in did not complete. Try again.',
+  exchange_failed: 'We could not finish signing you in. Try again.',
+  provider_unavailable: 'That provider is not available right now.',
+  unknown_provider: 'Unknown sign-in provider.',
+};
+const message = errorCode ? (MESSAGES[errorCode] ?? MESSAGES.exchange_failed) : null;
+---
+
+<Base title="Sign in" description="Sign in to TopThree." indexable={false}>
+  <div class="wrap">
+    <h1>Sign in</h1>
+    <p class="muted">
+      No password to remember. We only ever read your public profile.
+    </p>
+
+    {message && <p class="notice" role="alert">{message}</p>}
+
+    <div class="providers">
+      {
+        PROVIDERS.map((provider) => (
+          <form method="post" action="/auth/login">
+            <input type="hidden" name="provider" value={provider.id} />
+            <input type="hidden" name="next" value={next} />
+            <button type="submit" class="btn provider">
+              <span class="dot" style={`background:${provider.brand}`} aria-hidden="true"></span>
+              Continue with {provider.label}
+            </button>
+          </form>
+        ))
+      }
+    </div>
+
+    <p class="small muted terms">
+      Signing in creates a TopThree profile with a handle you can change.
+    </p>
+  </div>
+</Base>
+
+<style>
+  .wrap {
+    max-width: 26rem;
+    margin: 2rem auto;
+  }
+
+  .providers {
+    display: grid;
+    gap: 0.6rem;
+    margin: 1.5rem 0;
+  }
+
+  .provider {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0.75rem 1rem;
+  }
+
+  .dot {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    flex: none;
+  }
+
+  .terms { margin-top: 1.5rem; }
+</style>

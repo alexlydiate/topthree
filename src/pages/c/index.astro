@@ -1,0 +1,70 @@
+---
+import Base from '../../layouts/Base.astro';
+import { listCategories } from '../../lib/queries';
+
+const search = Astro.url.searchParams.get('q') ?? '';
+const categories = await listCategories(Astro.locals.supabase, { search, limit: 100 });
+---
+
+<Base
+  title="Categories"
+  description="Every category on TopThree — pick one and see what people rank highest."
+>
+  <header class="head">
+    <h1>Categories</h1>
+    <p class="muted">
+      Every category, busiest first. Each one has a TopFive built from
+      everybody&rsquo;s TopThrees.
+    </p>
+    <form method="get" action="/c" class="search" role="search">
+      <label class="visually-hidden" for="q">Search categories</label>
+      <input id="q" name="q" type="search" value={search} placeholder="Search categories…" />
+      <button type="submit" class="btn">Search</button>
+    </form>
+  </header>
+
+  {
+    categories.length === 0 ? (
+      <p class="muted">
+        {search
+          ? `Nothing matches “${search}”.`
+          : 'No categories yet.'}{' '}
+        <a href="/onboarding">Start one.</a>
+      </p>
+    ) : (
+      <div class="grid">
+        {categories.map((cat) => (
+          <a class="card cat-card" href={`/c/${cat.slug}`}>
+            <h2>{cat.name}</h2>
+            {cat.description && <p class="small muted">{cat.description}</p>}
+            <p class="small muted count">
+              {cat.top_three_count} TopThree{cat.top_three_count === 1 ? '' : 's'}
+            </p>
+          </a>
+        ))}
+      </div>
+    )
+  }
+</Base>
+
+<style>
+  .head { margin-bottom: 2rem; max-width: 38rem; }
+
+  .search {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .cat-card {
+    text-decoration: none;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.12s ease;
+  }
+  .cat-card:hover { border-color: var(--accent); }
+  .cat-card h2 { font-size: 1.1rem; margin: 0 0 0.35rem; }
+  .cat-card p { margin: 0 0 0.5rem; }
+  .cat-card .count { margin: auto 0 0; padding-top: 0.5rem; }
+</style>

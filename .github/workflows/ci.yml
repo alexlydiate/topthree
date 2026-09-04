@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push makes an in-flight run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Catches .astro, .ts and .vue errors that `astro build` alone will not.
+      - name: Typecheck
+        run: npm run check
+
+      # No credentials needed: SUPABASE_URL and SUPABASE_ANON_KEY are read at
+      # runtime, not inlined at build time.
+      - name: Build
+        run: npm run build
+
+  migrations:
+    name: Migrations apply from scratch
+    runs-on: ubuntu-latest
+    # Only worth the couple of minutes when the schema actually changed.
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The default shallow clone has no base branch to diff against.
+          fetch-depth: 0
+
+      - name: Are there migration changes?
+        id: changed
+        run: |
+          if git diff --quiet origin/${{ github.base_ref }}...HEAD -- supabase/; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.changed.outputs.run == 'true'
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+        if: steps.changed.outputs.run == 'true'
+
+      # Applies every migration to an empty database, which is the only way to
+      # find out that one of them no longer works from a clean slate.
+      - name: Start local Supabase
+        if: steps.changed.outputs.run == 'true'
+        run: npx supabase start -x realtime,storage-api,imgproxy,edge-runtime,logflare,vector,supavisor,studio
+
+      - name: Sanity-check the schema
+        if: steps.changed.outputs.run == 'true'
+        run: |
+          npx supabase db reset
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 -c "select count(*) from public.category_rankings;"

@@ -1,0 +1,141 @@
+---
+import Base from '../../layouts/Base.astro';
+import TopFive from '../../components/TopFive.astro';
+import TopThreeCard from '../../components/TopThreeCard.astro';
+import {
+  getCategoryBySlug,
+  getCategoryTopThrees,
+  getTopFive,
+} from '../../lib/queries';
+
+const { slug } = Astro.params;
+const { supabase, userId, profile } = Astro.locals;
+
+if (!slug) return Astro.redirect('/c', 302);
+
+const category = await getCategoryBySlug(supabase, slug);
+if (!category) {
+  return new Response('Category not found', { status: 404 });
+}
+
+const [rankings, topThrees] = await Promise.all([
+  getTopFive(supabase, category.id),
+  getCategoryTopThrees(supabase, category.id),
+]);
+
+const ownList = profile
+  ? topThrees.find((t) => t.profile?.handle === profile.handle)
+  : undefined;
+
+const description =
+  category.description ??
+  `What people rank as their top three ${category.name.toLowerCase()}, and the aggregated TopFive.`;
+
+// Give search engines the aggregate as a real list rather than making them
+// infer it from the markup.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: `TopFive ${category.name}`,
+  description,
+  numberOfItems: rankings.length,
+  itemListElement: rankings.map((row, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: row.name,
+  })),
+};
+---
+
+<Base title={category.name} description={description}>
+  <script
+    is:inline
+    slot="head"
+    type="application/ld+json"
+    set:html={JSON.stringify(jsonLd)}
+  />
+
+  <header class="head">
+    <p class="small muted crumb"><a href="/c">Categories</a></p>
+    <h1>{category.name}</h1>
+    {category.description && <p class="muted">{category.description}</p>}
+
+    <div class="actions">
+      {
+        userId ? (
+          <a class="btn btn-primary" href={`/c/${category.slug}/add`}>
+            {ownList ? 'Edit my TopThree' : 'Add my TopThree'}
+          </a>
+        ) : (
+          <a class="btn btn-primary" href={`/login?next=${encodeURIComponent(`/c/${category.slug}/add`)}`}>
+            Sign in to add yours
+          </a>
+        )
+      }
+      <span class="small muted">
+        {topThrees.length} TopThree{topThrees.length === 1 ? '' : 's'} so far
+      </span>
+    </div>
+  </header>
+
+  <TopFive rankings={rankings} contributors={topThrees.length} />
+
+  <section class="lists">
+    <h2>Everyone&rsquo;s TopThrees</h2>
+
+    {
+      topThrees.length === 0 ? (
+        <p class="muted">
+          Nobody has posted here yet.{' '}
+          {userId ? (
+            <a href={`/c/${category.slug}/add`}>Be the first.</a>
+          ) : (
+            <a href="/login">Sign in and be the first.</a>
+          )}
+        </p>
+      ) : (
+        <div class="list-grid">
+          {topThrees.map((tt) => (
+            <TopThreeCard
+              entries={tt.entries}
+              note={tt.note}
+              handle={tt.profile?.handle}
+              displayName={tt.profile?.display_name}
+              avatarUrl={tt.profile?.avatar_url}
+              updatedAt={tt.updated_at}
+              editHref={
+                profile && tt.profile?.handle === profile.handle
+                  ? `/c/${category.slug}/add`
+                  : undefined
+              }
+            />
+          ))}
+        </div>
+      )
+    }
+  </section>
+</Base>
+
+<style>
+  .head { margin-bottom: 1.75rem; }
+  .crumb { margin: 0 0 0.25rem; }
+  .crumb a { color: var(--muted); text-decoration: none; }
+  .crumb a:hover { color: var(--text); }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+
+  .lists { margin-top: 2.5rem; }
+  .lists h2 { margin-bottom: 1rem; }
+
+  .list-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  }
+</style>

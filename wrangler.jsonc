@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "topthree",
+  "compatibility_date": "2026-09-01",
+  // Supabase's libraries reach for a few Node builtins.
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Public, non-sensitive config. SUPABASE_URL and SUPABASE_ANON_KEY are NOT
+  // here -- they're set as Worker secrets by the deploy workflow.
+  "vars": {
+    "SITE_URL": "https://topthreeanything.com"
+  },
+
+  // Serves the app on the apex domain. Requires the zone to be in the same
+  // Cloudflare account; if it isn't attached yet, comment this out and the
+  // Worker deploys to its *.workers.dev URL instead.
+  //
+  // Left as apex-only on purpose: pointing www here too would serve the site
+  // on two canonical URLs and split its search ranking. Send www -> apex with
+  // a Cloudflare redirect rule instead.
+  "routes": [
+    { "pattern": "topthreeanything.com", "custom_domain": true }
+  ],
+
+  "observability": {
+    "enabled": true
+  }
+  // No "main" or "assets": @astrojs/cloudflare sets the worker entrypoint and
+  // asset directory itself. No kv_namespaces either -- Astro sessions are off
+  // (see astro.config.mjs), so there's nothing to provision.
+}

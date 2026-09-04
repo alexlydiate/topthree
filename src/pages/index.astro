@@ -1,0 +1,150 @@
+---
+import Base from '../layouts/Base.astro';
+import { listCategories, getTopThreesByUser } from '../lib/queries';
+
+const { supabase, userId, profile } = Astro.locals;
+
+// A signed-in user with nothing posted has exactly one useful next step.
+if (userId) {
+  const mine = await getTopThreesByUser(supabase, userId);
+  if (mine.length === 0) return Astro.redirect('/onboarding', 302);
+}
+
+const categories = await listCategories(supabase, { limit: 8 });
+const description =
+  'Everyone has a top three. Post yours in any category, and see the crowd’s TopFive emerge from everybody else’s.';
+---
+
+<Base title="TopThree" description={description}>
+  <section class="hero">
+    <h1>Everyone has a top three.</h1>
+    <p class="lede">
+      Pick a category. Name your three, in order. Everybody else&rsquo;s three get
+      counted alongside yours, and the crowd&rsquo;s <strong>TopFive</strong> falls
+      out of the total.
+    </p>
+
+    {
+      profile ? (
+        <p>
+          <a class="btn btn-primary" href="/c">Find a category</a>
+        </p>
+      ) : (
+        <p class="cta">
+          <a class="btn btn-primary" href="/login">Sign in to post yours</a>
+          <a class="btn" href="/c">Look around first</a>
+        </p>
+      )
+    }
+  </section>
+
+  <section class="how">
+    <h2 class="visually-hidden">How it works</h2>
+    <ol class="steps">
+      <li>
+        <span class="rank rank-1" aria-hidden="true">1</span>
+        <div>
+          <h3>Choose a category</h3>
+          <p class="small muted">Anything at all. Start one if it doesn&rsquo;t exist.</p>
+        </div>
+      </li>
+      <li>
+        <span class="rank rank-2" aria-hidden="true">2</span>
+        <div>
+          <h3>Rank your three</h3>
+          <p class="small muted">In order. First place counts for more.</p>
+        </div>
+      </li>
+      <li>
+        <span class="rank rank-3" aria-hidden="true">3</span>
+        <div>
+          <h3>Watch the TopFive form</h3>
+          <p class="small muted">Every list feeds the aggregate for that category.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Categories</h2>
+      <a class="small" href="/c">See all</a>
+    </div>
+
+    {
+      categories.length === 0 ? (
+        <p class="muted">No categories yet. <a href="/onboarding">Start the first one.</a></p>
+      ) : (
+        <div class="grid">
+          {categories.map((cat) => (
+            <a class="card cat-card" href={`/c/${cat.slug}`}>
+              <h3>{cat.name}</h3>
+              {cat.description && <p class="small muted">{cat.description}</p>}
+              <p class="small muted count">
+                {cat.top_three_count} TopThree{cat.top_three_count === 1 ? '' : 's'}
+              </p>
+            </a>
+          ))}
+        </div>
+      )
+    }
+  </section>
+</Base>
+
+<style>
+  .hero {
+    padding: 1rem 0 2.5rem;
+    max-width: 40rem;
+  }
+
+  .lede {
+    font-size: 1.15rem;
+    color: var(--muted);
+  }
+
+  .cta {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .how {
+    margin-bottom: 3rem;
+  }
+
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  }
+
+  .steps li {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  .steps h3 { margin: 0 0 0.15rem; }
+  .steps p { margin: 0; }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .cat-card {
+    text-decoration: none;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.12s ease;
+  }
+  .cat-card:hover { border-color: var(--accent); }
+  .cat-card h3 { margin: 0 0 0.35rem; }
+  .cat-card p { margin: 0 0 0.5rem; }
+  .cat-card .count { margin: auto 0 0; padding-top: 0.5rem; }
+</style>

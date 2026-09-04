@@ -1,0 +1,111 @@
+---
+import type { Profile } from '../lib/types';
+
+interface Props {
+  profile: Profile | null;
+}
+
+const { profile } = Astro.props;
+const path = Astro.url.pathname;
+---
+
+<header class="nav-outer">
+  <nav class="shell nav" aria-label="Primary">
+    <a class="brand" href="/">
+      <span class="brand-mark" aria-hidden="true">3</span>
+      <span>TopThree</span>
+    </a>
+
+    <div class="nav-links">
+      <a href="/c" aria-current={path === '/c' ? 'page' : undefined}>Categories</a>
+      {
+        profile ? (
+          <>
+            <a href={`/u/${profile.handle}`}>@{profile.handle}</a>
+            <form method="post" action="/auth/signout" class="signout">
+              <button type="submit" class="linkish">Sign out</button>
+            </form>
+          </>
+        ) : (
+          <a class="btn btn-primary btn-sm" href="/login">Sign in</a>
+        )
+      }
+    </div>
+  </nav>
+</header>
+
+<style>
+  .nav-outer {
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.5rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+
+  .brand-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.95rem;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.925rem;
+  }
+
+  .nav-links a:not(.btn) {
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .nav-links a:not(.btn):hover,
+  .nav-links a[aria-current='page'] {
+    color: var(--text);
+  }
+
+  .btn-sm {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .signout {
+    display: inline;
+    margin: 0;
+  }
+
+  .linkish {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .linkish:hover {
+    color: var(--text);
+    text-decoration: underline;
+  }
+</style>

@@ -1,0 +1,122 @@
+---
+import Base from '../../layouts/Base.astro';
+import TopThreeCard from '../../components/TopThreeCard.astro';
+import { getProfileByHandle, getTopThreesByUser } from '../../lib/queries';
+
+const { handle } = Astro.params;
+const { supabase, profile: viewer } = Astro.locals;
+
+if (!handle) return Astro.redirect('/', 302);
+
+const profile = await getProfileByHandle(supabase, handle);
+if (!profile) {
+  return new Response('Profile not found', { status: 404 });
+}
+
+// Canonicalise casing so /u/Alex and /u/alex don't split link equity.
+if (profile.handle !== handle) {
+  return Astro.redirect(`/u/${profile.handle}`, 301);
+}
+
+const topThrees = await getTopThreesByUser(supabase, profile.id);
+const isOwn = viewer?.id === profile.id;
+const name = profile.display_name ?? profile.handle;
+
+const description = `${name}'s top threes on TopThree — ${topThrees.length} ${
+  topThrees.length === 1 ? 'category' : 'categories'
+}.`;
+---
+
+<Base title={`@${profile.handle}`} description={description}>
+  <header class="profile-head">
+    {
+      profile.avatar_url ? (
+        <img class="avatar" src={profile.avatar_url} alt="" width="64" height="64" />
+      ) : (
+        <span class="avatar avatar-fallback" aria-hidden="true">
+          {name.charAt(0).toUpperCase()}
+        </span>
+      )
+    }
+
+    <div class="identity">
+      <h1>{name}</h1>
+      <p class="muted handle">@{profile.handle}</p>
+      {profile.bio && <p class="bio">{profile.bio}</p>}
+    </div>
+
+    {isOwn && <a class="btn" href="/onboarding">Add a TopThree</a>}
+  </header>
+
+  <section>
+    <h2>
+      {topThrees.length} TopThree{topThrees.length === 1 ? '' : 's'}
+    </h2>
+
+    {
+      topThrees.length === 0 ? (
+        <p class="muted">
+          {isOwn ? (
+            <>Nothing yet. <a href="/onboarding">Post your first.</a></>
+          ) : (
+            <>@{profile.handle} hasn&rsquo;t posted a TopThree yet.</>
+          )}
+        </p>
+      ) : (
+        <div class="list-grid">
+          {topThrees.map((tt) => (
+            <TopThreeCard
+              entries={tt.entries}
+              note={tt.note}
+              categoryName={tt.category.name}
+              categorySlug={tt.category.slug}
+              updatedAt={tt.updated_at}
+              editHref={isOwn ? `/c/${tt.category.slug}/add` : undefined}
+            />
+          ))}
+        </div>
+      )
+    }
+  </section>
+</Base>
+
+<style>
+  .profile-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--surface-alt);
+    flex: none;
+  }
+  .avatar-fallback {
+    display: inline-grid;
+    place-items: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .identity { flex: 1; min-width: 0; }
+  .identity h1 { margin: 0; }
+  .handle { margin: 0; }
+  .bio { margin: 0.5rem 0 0; }
+
+  .list-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+    margin-top: 1rem;
+  }
+</style>
