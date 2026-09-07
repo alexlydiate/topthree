@@ -9,7 +9,8 @@
     "build": "astro build",
     "preview": "wrangler dev",
     "check": "astro check",
-    "deploy": "astro build && wrangler deploy"
+    "deploy": "astro build && wrangler deploy",
+    "seed": "node scripts/seed.mjs"
   },
   "repository": {
     "type": "git",

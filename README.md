@@ -154,6 +154,31 @@ rather than `.env` — copy the same two values across.
 
 #### Signing in locally
 
+**The quick way — `/dev-login`.** TopThree is social-SSO-only, so without this
+you could not sign in locally at all until you had registered a real OAuth app.
+Seed the test accounts and pick one:
+
+```bash
+npm run seed
+```
+
+Then open <http://localhost:4321/dev-login> and click a user. Alice, Bob and
+Cara have content; **Dave has no lists**, so sign in as him to see the first-run
+onboarding prompt.
+
+`npm run seed` is idempotent, so re-run it after `supabase db reset`.
+
+The route is guarded by the *Supabase host*, not by `NODE_ENV` or a feature
+flag — a hosted deploy talks to `<ref>.supabase.co`, so `/dev-login` and
+`/api/dev-login` both return 404 there and the hint disappears from `/login`.
+That guard is deliberately something you cannot flip on by accident, and it's
+verified: pointing `SUPABASE_URL` at a `.supabase.co` host 404s both routes.
+The test accounts have a published password and exist only in the local
+database.
+
+**The real thing — actual OAuth.** To exercise the genuine flow you need
+provider credentials.
+
 `supabase/config.toml` enables **Google** and **Discord** and reads their
 credentials from the project-root `.env` via `env()` substitution, so no secret
 is ever committed. You still have to register the OAuth apps yourself.

@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { PROVIDERS } from '../lib/types';
 import { safeNext } from '../lib/redirects';
+import { isLocalSupabase } from '../lib/devAuth';
 
 if (Astro.locals.userId) return Astro.redirect('/', 302);
 
@@ -16,6 +17,7 @@ const MESSAGES: Record<string, string> = {
   unknown_provider: 'Unknown sign-in provider.',
 };
 const message = errorCode ? (MESSAGES[errorCode] ?? MESSAGES.exchange_failed) : null;
+const showDevLogin = isLocalSupabase();
 ---
 
 <Base title="Sign in" description="Sign in to TopThree." indexable={false}>
@@ -45,6 +47,14 @@ const message = errorCode ? (MESSAGES[errorCode] ?? MESSAGES.exchange_failed) : 
     <p class="small muted terms">
       Signing in creates a TopThree profile with a handle you can change.
     </p>
+
+    {
+      showDevLogin && (
+        <p class="small dev-hint">
+          Running locally &mdash; <a href={`/dev-login?next=${encodeURIComponent(next)}`}>sign in as a test user</a> instead.
+        </p>
+      )
+    }
   </div>
 </Base>
 
@@ -74,4 +84,10 @@ const message = errorCode ? (MESSAGES[errorCode] ?? MESSAGES.exchange_failed) : 
   }
 
   .terms { margin-top: 1.5rem; }
+
+  .dev-hint {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+  }
 </style>
