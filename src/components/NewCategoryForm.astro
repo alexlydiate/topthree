@@ -1,0 +1,48 @@
+---
+interface Props {
+  heading: string;
+  /** Prefilled when arriving from a search that found nothing. */
+  prefillName?: string;
+}
+
+const { heading, prefillName = '' } = Astro.props;
+---
+
+<section class="card">
+  <h2>{heading}</h2>
+  <form method="post" action="/api/category" class="new-cat">
+    <label class="visually-hidden" for="name">Category name</label>
+    <input
+      id="name"
+      name="name"
+      type="text"
+      placeholder="e.g. Cheeses, Kraftwerk albums, excuses for being late"
+      maxlength="80"
+      value={prefillName}
+      autofocus={prefillName ? true : undefined}
+      required
+    />
+    <label class="visually-hidden" for="description">Description</label>
+    <input
+      id="description"
+      name="description"
+      type="text"
+      placeholder="One line of context (optional)"
+      maxlength="280"
+    />
+    <button type="submit" class="btn btn-primary">Create and add mine</button>
+  </form>
+  <p class="small muted">
+    If a category with that name already exists we&rsquo;ll take you there
+    instead of making a duplicate.
+  </p>
+</section>
+
+<style>
+  .new-cat {
+    display: grid;
+    gap: 0.6rem;
+    margin: 1rem 0 0.75rem;
+  }
+  .new-cat .btn { justify-self: start; }
+</style>

@@ -1,5 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
+import CategoryPicker from '../components/CategoryPicker.astro';
+import NewCategoryForm from '../components/NewCategoryForm.astro';
 import { listCategories, getTopThreesByUser } from '../lib/queries';
 
 const { supabase, userId, profile } = Astro.locals;
@@ -30,6 +32,17 @@ const postedIn = new Set(mine.map((t) => t.category.id));
 
 // Same courtesy for a fruitless search made on this page.
 const prefillName = suggestedName || (search && categories.length === 0 ? search : '');
+
+/**
+ * Someone arriving with nothing posted has no idea what this site wants from
+ * them, and a blank text box is a worse first ask than a list of things to
+ * click. So lead with the categories and offer creation underneath.
+ *
+ * Unless they got here from "Start one.", which is an explicit statement of
+ * intent to create -- in that case the prefilled form goes first, or they land
+ * below the thing they asked for.
+ */
+const createFirst = !isFirstTime || Boolean(prefillName);
 ---
 
 <Base
@@ -40,178 +53,47 @@ const prefillName = suggestedName || (search && categories.length === 0 ? search
   <div class="wrap stack">
     {error && <p class="notice" role="alert">{error}</p>}
 
-    {
-      !profile.handle_confirmed && (
-        <section class="card">
-          <h2>First, pick your handle</h2>
-          <p class="small muted">
-            We guessed <strong>@{profile.handle}</strong> from your account. Change
-            it now if you&rsquo;d rather have something else &mdash; it&rsquo;s the
-            address of your profile page.
-          </p>
-          <form method="post" action="/api/handle" class="handle-form">
-            <input type="hidden" name="back" value="/onboarding" />
-            <label class="visually-hidden" for="handle">Handle</label>
-            <div class="handle-row">
-              <span class="at" aria-hidden="true">@</span>
-              <input
-                id="handle"
-                name="handle"
-                type="text"
-                value={profile.handle}
-                pattern="[a-z0-9_]{3,20}"
-                maxlength="20"
-                required
-              />
-            </div>
-            <label class="visually-hidden" for="display_name">Display name</label>
-            <input
-              id="display_name"
-              name="display_name"
-              type="text"
-              placeholder="Display name (optional)"
-              value={profile.display_name ?? ''}
-              maxlength="60"
-            />
-            <button type="submit" class="btn">Save handle</button>
-          </form>
-        </section>
-      )
-    }
-
     <section>
       <h1>{isFirstTime ? 'What are your top three?' : 'Post another TopThree'}</h1>
       <p class="muted">
-        Pick a category below, or start one of your own.
+        {
+          isFirstTime
+            ? 'Pick a category that interests you, or start one of your own.'
+            : 'Start a category of your own, or pick an existing one.'
+        }
       </p>
     </section>
 
-    <section class="card">
-      <h2>Start a new category</h2>
-      <form method="post" action="/api/category" class="new-cat">
-        <label class="visually-hidden" for="name">Category name</label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          placeholder="e.g. Cheeses, Kraftwerk albums, excuses for being late"
-          maxlength="80"
-          value={prefillName}
-          autofocus={prefillName ? true : undefined}
-          required
-        />
-        <label class="visually-hidden" for="description">Description</label>
-        <input
-          id="description"
-          name="description"
-          type="text"
-          placeholder="One line of context (optional)"
-          maxlength="280"
-        />
-        <button type="submit" class="btn btn-primary">Create and add mine</button>
-      </form>
-      <p class="small muted">
-        If a category with that name already exists we&rsquo;ll take you there
-        instead of making a duplicate.
-      </p>
-    </section>
-
-    <section>
-      <div class="section-head">
-        <h2>Or pick an existing one</h2>
-      </div>
-
-      <form method="get" action="/onboarding" class="search" role="search">
-        <label class="visually-hidden" for="q">Search categories</label>
-        <input id="q" name="q" type="search" value={search} placeholder="Search categories…" />
-        <button type="submit" class="btn">Search</button>
-      </form>
-
-      {
-        categories.length === 0 ? (
-          <p class="muted">
-            No categories match &ldquo;{search}&rdquo;. Start it above.
-          </p>
-        ) : (
-          <ul class="cat-list">
-            {categories.map((cat) => (
-              <li>
-                <a href={`/c/${cat.slug}/add`} class="cat-row">
-                  <span class="cat-name">
-                    {cat.name}
-                    {postedIn.has(cat.id) && <span class="badge">posted</span>}
-                  </span>
-                  <span class="small muted">
-                    {cat.top_three_count} TopThree{cat.top_three_count === 1 ? '' : 's'}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        )
-      }
-    </section>
+    {
+      createFirst ? (
+        <>
+          <NewCategoryForm heading="Start a new category" prefillName={prefillName} />
+          <CategoryPicker
+            heading="Or pick an existing one"
+            categories={categories}
+            search={search}
+            postedIn={postedIn}
+            createPosition="above"
+          />
+        </>
+      ) : (
+        <>
+          <CategoryPicker
+            heading="Pick a category"
+            categories={categories}
+            search={search}
+            postedIn={postedIn}
+            createPosition="below"
+            limit={8}
+          />
+          <NewCategoryForm heading="None of these? Start your own" />
+        </>
+      )
+    }
   </div>
 </Base>
 
 <style>
   .wrap { max-width: 42rem; margin: 0 auto; }
   .wrap > * + * { margin-top: 2rem; }
-
-  .handle-form, .new-cat {
-    display: grid;
-    gap: 0.6rem;
-    margin: 1rem 0 0.75rem;
-  }
-  .handle-form .btn, .new-cat .btn { justify-self: start; }
-
-  .handle-row {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-  .at { color: var(--muted); font-weight: 600; }
-
-  .search {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .cat-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: var(--surface);
-  }
-  .cat-list li + li { border-top: 1px solid var(--border); }
-
-  .cat-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
-    text-decoration: none;
-    color: var(--text);
-  }
-  .cat-row:hover { background: var(--surface-alt); }
-
-  .cat-name { font-weight: 550; }
-
-  .badge {
-    margin-left: 0.5rem;
-    padding: 0.1rem 0.4rem;
-    border-radius: 4px;
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    vertical-align: middle;
-  }
 </style>

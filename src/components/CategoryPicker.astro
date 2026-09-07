@@ -1,0 +1,114 @@
+---
+import type { CategoryStats } from '../lib/types';
+
+interface Props {
+  heading: string;
+  categories: CategoryStats[];
+  search: string;
+  /** Category ids the viewer has already posted in. */
+  postedIn: Set<string>;
+  /** Where the create form sits, so the empty state can point at it. */
+  createPosition: 'above' | 'below';
+  /**
+   * Cap the rows shown. When the create form sits below this list, an
+   * uncapped list buries it several screens down on a phone.
+   */
+  limit?: number;
+}
+
+const { heading, categories, search, postedIn, createPosition, limit } = Astro.props;
+
+const shown = limit ? categories.slice(0, limit) : categories;
+const hidden = categories.length - shown.length;
+---
+
+<section>
+  <div class="section-head">
+    <h2>{heading}</h2>
+  </div>
+
+  <form method="get" action="/onboarding" class="search" role="search">
+    <label class="visually-hidden" for="q">Search categories</label>
+    <input id="q" name="q" type="search" value={search} placeholder="Search categories…" />
+    <button type="submit" class="btn">Search</button>
+  </form>
+
+  {
+    categories.length === 0 ? (
+      <p class="muted">
+        No categories match &ldquo;{search}&rdquo;. Start it {createPosition}.
+      </p>
+    ) : (
+      <ul class="cat-list">
+        {shown.map((cat) => (
+          <li>
+            <a href={`/c/${cat.slug}/add`} class="cat-row">
+              <span class="cat-name">
+                {cat.name}
+                {postedIn.has(cat.id) && <span class="badge">posted</span>}
+              </span>
+              <span class="small muted">
+                {cat.top_three_count} TopThree{cat.top_three_count === 1 ? '' : 's'}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  {
+    hidden > 0 && (
+      <p class="small muted more">
+        {hidden} more &mdash; search above, or <a href="/c">browse them all</a>.
+      </p>
+    )
+  }
+</section>
+
+<style>
+  .search {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .cat-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .cat-list li + li { border-top: 1px solid var(--border); }
+
+  .cat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .cat-row:hover { background: var(--surface-alt); }
+
+  .cat-name { font-weight: 550; }
+
+  .more { margin: 0.75rem 0 0; }
+
+  .badge {
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+  }
+</style>

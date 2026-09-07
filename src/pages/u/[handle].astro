@@ -20,6 +20,7 @@ if (profile.handle !== handle) {
 
 const topThrees = await getTopThreesByUser(supabase, profile.id);
 const isOwn = viewer?.id === profile.id;
+const handleError = Astro.url.searchParams.get('error');
 const name = profile.display_name ?? profile.handle;
 
 const description = `${name}'s top threes on TopThree — ${topThrees.length} ${
@@ -47,6 +48,57 @@ const description = `${name}'s top threes on TopThree — ${topThrees.length} ${
 
     {isOwn && <a class="btn" href="/onboarding">Add a TopThree</a>}
   </header>
+
+  {
+    /*
+     * The handle is a profile address, so this is the one place it means
+     * anything -- you are looking at the thing being named. It used to be the
+     * first thing a new user saw on the onboarding page, ahead of the reason
+     * they came, which put an admin chore in front of the product.
+     *
+     * handle_confirmed already tracks this, so saving once retires it. Leaving
+     * the field unchanged and saving counts as keeping it.
+     */
+    isOwn && !profile.handle_confirmed && (
+      <section class="card handle-nudge">
+        <h2>Your profile address</h2>
+        <p class="small muted">
+          We guessed <strong>@{profile.handle}</strong> from the account you signed
+          in with. This page lives at <code>/u/{profile.handle}</code> &mdash; change
+          it now if you&rsquo;d rather, or save to keep it.
+        </p>
+
+        {handleError && <p class="notice" role="alert">{handleError}</p>}
+
+        <form method="post" action="/api/handle" class="handle-form">
+          <input type="hidden" name="back" value={`/u/${profile.handle}`} />
+          <label class="visually-hidden" for="handle">Handle</label>
+          <div class="handle-row">
+            <span class="at" aria-hidden="true">@</span>
+            <input
+              id="handle"
+              name="handle"
+              type="text"
+              value={profile.handle}
+              pattern="[a-z0-9_]{3,20}"
+              maxlength="20"
+              required
+            />
+          </div>
+          <label class="visually-hidden" for="display_name">Display name</label>
+          <input
+            id="display_name"
+            name="display_name"
+            type="text"
+            placeholder="Display name (optional)"
+            value={profile.display_name ?? ''}
+            maxlength="60"
+          />
+          <button type="submit" class="btn">Save</button>
+        </form>
+      </section>
+    )
+  }
 
   <section>
     <h2>
@@ -112,6 +164,33 @@ const description = `${name}'s top threes on TopThree — ${topThrees.length} ${
   .identity h1 { margin: 0; }
   .handle { margin: 0; }
   .bio { margin: 0.5rem 0 0; }
+
+  .handle-nudge {
+    margin-bottom: 2rem;
+    border-left: 3px solid var(--accent);
+  }
+  .handle-nudge h2 { font-size: 1.05rem; }
+
+  .handle-form {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    max-width: 22rem;
+  }
+  .handle-form .btn { justify-self: start; }
+
+  .handle-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .at { color: var(--muted); font-weight: 600; }
+
+  code {
+    background: var(--surface-alt);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+  }
 
   .list-grid {
     display: grid;
