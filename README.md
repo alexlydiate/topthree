@@ -82,40 +82,42 @@ https://<your-project-ref>.supabase.co/auth/v1/callback
 **Google** and **Discord** are native providers — create an OAuth app with each,
 then paste the client ID and secret into Supabase → Authentication → Providers.
 
-**Reddit is not a native Supabase provider.** It's wired up as a *custom OAuth
-provider*, which the free tier supports (3 of them). Create a **web app** at
-[reddit.com/prefs/apps](https://www.reddit.com/prefs/apps), then in Supabase →
-Authentication → Providers → Custom:
+#### The providers that aren't here, and why
 
-| Field | Value |
-| --- | --- |
-| Identifier | `custom:reddit` (must match `PROVIDERS` in `src/lib/types.ts`) |
-| Type | OAuth2 |
-| Authorization URL | `https://www.reddit.com/api/v1/authorize` |
-| Token URL | `https://www.reddit.com/api/v1/access_token` |
-| UserInfo URL | `https://oauth.reddit.com/api/v1/me` |
-| Scopes | `identity` |
-| Email optional | **on** |
+Each of these was considered and ruled out on evidence, not preference. Recorded
+so the question doesn't get reopened from scratch.
 
-That last row is not optional-in-practice: Reddit's `/api/v1/me` returns no
-email address, and Supabase requires one unless you say otherwise. Sign-in fails
-with a confusing error if you miss it.
+**Reddit — no longer obtainable.** Reddit ended self-service API access in
+November 2025 under its Responsible Builder Policy. New OAuth apps require
+applying through Developer Support and passing manual review; the app-creation
+form now just returns a link to the policy. Credentials issued before November
+2025 still work, so this is only a wall for new projects.
 
-Reddit also wants `duration=permanent` on the authorize URL if you want refresh
-tokens to outlive the hour.
+Supabase's side was never the problem and the wiring is known-good, so if an
+application is ever approved this is the whole of it: create the provider under
+Authentication → Providers → **Custom**, identifier `custom:reddit`, type
+**OAuth2** (Reddit has no OIDC discovery document), authorize
+`https://www.reddit.com/api/v1/authorize`, token
+`https://www.reddit.com/api/v1/access_token`, userinfo
+`https://oauth.reddit.com/api/v1/me`, scope `identity`, and **Email optional
+switched on** — Reddit returns no email address and sign-in fails confusingly
+without it. Add `duration=permanent` to the authorize parameters if you want
+refresh tokens to outlive the hour. Then re-add it to `PROVIDERS` in
+`src/lib/types.ts`. Note custom providers are hosted-only, so it could never be
+tested against the local stack.
 
-#### On the two providers you asked for that aren't here
-
-**Instagram is not possible.** The Basic Display API — the only route that ever
-supported personal accounts — reached end-of-life on 4 December 2024. Its
+**Instagram — not possible at all.** The Basic Display API, the only route that
+ever supported personal accounts, reached end-of-life on 4 December 2024. Its
 replacement requires a Business or Creator account, so consumer Instagram login
-no longer exists. Facebook Login is the only remaining Meta route.
+no longer exists in any form. Facebook Login is the only remaining Meta route.
 
-**TikTok needs a shim.** TikTok's Login Kit uses `client_key` where the OAuth2
-spec says `client_id`, which breaks Supabase's generic OAuth2 client along with
-most other libraries. It's doable with a small Cloudflare Worker that proxies
-the authorize and token endpoints and rewrites the parameter, then registering
-that Worker's URLs as the custom provider endpoints. Deferred, not blocked.
+**TikTok — possible, deferred.** Its Login Kit uses `client_key` where the
+OAuth2 spec says `client_id`, which breaks Supabase's generic OAuth2 client
+along with most other libraries. Workable via a small Cloudflare Worker that
+proxies the authorize and token endpoints and rewrites the parameter, then
+registering that Worker's URLs as a custom provider. Deferred, not blocked.
+
+**X — excluded by choice.** A brand decision, not a technical one.
 
 ### 3. Local development
 
@@ -218,10 +220,9 @@ Check it took with `curl -s http://127.0.0.1:54321/auth/v1/settings -H "apikey: 
 — enabled providers appear under `external`. A provider that's off produces
 `{"code":400,"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}`.
 
-**Reddit cannot be tested locally.** It's a Supabase *custom* OAuth provider, and
-custom providers are hosted-only — the local CLI supports only the native list.
-The app will happily redirect to GoTrue for `custom:reddit`; GoTrue is what
-rejects it. Test Reddit against a hosted free-tier project.
+Both shipping providers are native to Supabase, so both work locally. Note that
+*custom* OAuth providers are hosted-only — if one is ever added, it can only be
+tested against a real project.
 
 ### 4. Deploy
 

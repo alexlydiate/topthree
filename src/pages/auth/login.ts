@@ -19,9 +19,10 @@ export const POST: APIRoute = async ({ request, locals, redirect }) => {
   const callback = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
   const { data, error } = await locals.supabase.auth.signInWithOAuth({
-    // Reddit is a Supabase *custom* provider ("custom:reddit"), which the
-    // supabase-js Provider union doesn't know about. The value is passed
-    // straight through to the authorize URL, so the cast is safe.
+    // `provider` came off a form, so it's a string. The cast is also what lets
+    // a Supabase *custom* provider id ("custom:something") through, which the
+    // supabase-js Provider union doesn't model -- the value is passed straight
+    // to the authorize URL. ALLOWED is the real guard.
     provider: provider as Provider,
     options: {
       redirectTo: callback,

@@ -330,9 +330,9 @@ max_frequency = "5s"
 # Secrets are read from the project-root .env via env() substitution, so no
 # credential ever lands in this file (which IS committed).
 #
-# Reddit is deliberately absent: it's a Supabase *custom* OAuth provider, and
-# custom providers are a hosted-only feature. The local stack supports only the
-# native list. Test Reddit against a hosted project.
+# Reddit is absent for two reasons. It would need to be a Supabase *custom*
+# OAuth provider, which is hosted-only and so untestable here anyway -- and as
+# of November 2025 Reddit no longer issues API credentials self-serve at all.
 #
 # Redirect URI to register with each provider:
 #   http://127.0.0.1:54321/auth/v1/callback

@@ -63,10 +63,6 @@ export interface TopThreeWithCategory extends TopThree {
 export const PROVIDERS = [
   { id: 'google', label: 'Google', brand: '#ea4335' },
   { id: 'discord', label: 'Discord', brand: '#5865f2' },
-  // Reddit isn't a native Supabase provider; it's wired up as a custom OAuth
-  // provider. See README for the setup. The id must match the identifier
-  // configured in the Supabase dashboard.
-  { id: 'custom:reddit', label: 'Reddit', brand: '#ff4500' },
 ] as const;
 
 export type ProviderId = (typeof PROVIDERS)[number]['id'];
