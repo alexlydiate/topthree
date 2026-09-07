@@ -40,7 +40,9 @@ const categories = await listCategories(Astro.locals.supabase, { search, limit: 
             <h2>{cat.name}</h2>
             {cat.description && <p class="small muted">{cat.description}</p>}
             <p class="small muted count">
-              {cat.top_three_count} TopThree{cat.top_three_count === 1 ? '' : 's'}
+              {cat.top_three_count === 0
+                ? 'Be the first'
+                : `${cat.top_three_count} TopThree${cat.top_three_count === 1 ? '' : 's'}`}
             </p>
           </a>
         ))}
