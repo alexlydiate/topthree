@@ -7,6 +7,13 @@ import vue from '@astrojs/vue';
 export default defineConfig({
   // Every page is rendered on demand. Category and profile pages depend on
   // live data, and the whole point of SSR here is that crawlers get real HTML.
+  // Canonical/OG URLs always name the production domain, so the *.workers.dev
+  // hostname can't become a duplicate of the site in the index. This is
+  // build-time and deliberately separate from SITE_URL, which is runtime and
+  // environment-specific (it builds OAuth callbacks, which must match the host
+  // actually being used).
+  site: 'https://topthreeanything.com',
+
   output: 'server',
 
   // Astro's own session store is unused -- Supabase keeps the session in

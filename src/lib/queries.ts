@@ -256,3 +256,51 @@ export async function searchItems(
 
   return data ?? [];
 }
+
+/**
+ * URLs worth putting in the sitemap.
+ *
+ * Only categories and profiles that actually contain something. A category
+ * with no TopThrees renders a heading and "nobody has posted here yet", which
+ * is a thin page; submitting hundreds of them invites Google to judge the site
+ * on its emptiest URLs rather than its best ones. They stay crawlable and
+ * linked from /c — they just aren't advertised.
+ */
+export interface SitemapEntry {
+  path: string;
+  lastmod: string | null;
+}
+
+export async function getSitemapCategories(
+  supabase: SupabaseClient,
+  limit = 5000,
+): Promise<SitemapEntry[]> {
+  const { data } = await supabase
+    .from('category_stats')
+    .select('slug, last_activity_at, top_three_count')
+    .gt('top_three_count', 0)
+    .order('last_activity_at', { ascending: false })
+    .limit(limit);
+
+  return (data ?? []).map((row) => ({
+    path: `/c/${row.slug}`,
+    lastmod: row.last_activity_at,
+  }));
+}
+
+export async function getSitemapProfiles(
+  supabase: SupabaseClient,
+  limit = 5000,
+): Promise<SitemapEntry[]> {
+  const { data } = await supabase
+    .from('profile_stats')
+    .select('handle, last_activity_at, top_three_count')
+    .gt('top_three_count', 0)
+    .order('last_activity_at', { ascending: false })
+    .limit(limit);
+
+  return (data ?? []).map((row) => ({
+    path: `/u/${row.handle}`,
+    lastmod: row.last_activity_at,
+  }));
+}
