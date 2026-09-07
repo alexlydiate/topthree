@@ -32,6 +32,33 @@ function parseCookieHeader(header: string | null): { name: string; value: string
   });
 }
 
+/**
+ * Tolerate a SUPABASE_URL that has an API path stuck on the end.
+ *
+ * The dashboard shows the project URL and the REST endpoint
+ * (`https://<ref>.supabase.co/rest/v1`) close together, and pasting the latter
+ * fails in a way nobody could reasonably diagnose: every auth call lands on
+ * `/rest/v1/auth/v1/...`, which the gateway routes to PostgREST, which replies
+ * "No API key found in request" -- an error about API keys for a problem that
+ * has nothing to do with API keys.
+ *
+ * Strip it and say so, rather than let that happen twice.
+ */
+function normaliseSupabaseUrl(raw: string): string {
+  const trimmed = raw.trim().replace(/\/+$/, '');
+  const stripped = trimmed.replace(/\/(rest|auth|storage|realtime|functions)\/v\d+$/, '');
+
+  if (stripped !== trimmed) {
+    console.warn(
+      `SUPABASE_URL looks like an API endpoint, not a project URL. ` +
+        `Using "${stripped}" instead of "${trimmed}". Set it to the project URL ` +
+        `(https://<ref>.supabase.co) to silence this.`,
+    );
+  }
+
+  return stripped;
+}
+
 export interface SupabaseContext {
   supabase: SupabaseClient;
   /**
@@ -49,7 +76,7 @@ export function createSupabaseServerClient(
 ): SupabaseContext {
   const authHeaders: Record<string, string> = {};
 
-  const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  const supabase = createServerClient(normaliseSupabaseUrl(SUPABASE_URL), SUPABASE_ANON_KEY, {
     cookies: {
       getAll() {
         return parseCookieHeader(request.headers.get('cookie'));

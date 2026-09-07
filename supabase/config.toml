@@ -156,6 +156,11 @@ enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
 # Astro dev server, not the Supabase default of :3000.
+#
+# WARNING: these are LOCAL settings. `supabase db push` only pushes migrations,
+# so production auth is configured in the dashboard instead. Do NOT run
+# `supabase config push` against the live project -- it would overwrite the
+# production site_url with this localhost one and break sign-in for everyone.
 site_url = "http://localhost:4321"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
