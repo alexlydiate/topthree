@@ -29,7 +29,9 @@ const categories = await listCategories(Astro.locals.supabase, { search, limit: 
         {search
           ? `Nothing matches “${search}”.`
           : 'No categories yet.'}{' '}
-        <a href="/onboarding">Start one.</a>
+        <a href={search ? `/onboarding?name=${encodeURIComponent(search)}` : '/onboarding'}>
+          Start one.
+        </a>
       </p>
     ) : (
       <div class="grid">
