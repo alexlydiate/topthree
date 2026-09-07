@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import TopThreeCard from '../../components/TopThreeCard.astro';
+import HandleForm from '../../components/HandleForm.astro';
 import { getProfileByHandle, getTopThreesByUser } from '../../lib/queries';
 
 const { handle } = Astro.params;
@@ -70,33 +71,18 @@ const description = `${name}'s top threes on TopThree — ${topThrees.length} ${
 
         {handleError && <p class="notice" role="alert">{handleError}</p>}
 
-        <form method="post" action="/api/handle" class="handle-form">
-          <input type="hidden" name="back" value={`/u/${profile.handle}`} />
-          <label class="visually-hidden" for="handle">Handle</label>
-          <div class="handle-row">
-            <span class="at" aria-hidden="true">@</span>
-            <input
-              id="handle"
-              name="handle"
-              type="text"
-              value={profile.handle}
-              pattern="[a-z0-9_]{3,20}"
-              maxlength="20"
-              required
-            />
-          </div>
-          <label class="visually-hidden" for="display_name">Display name</label>
-          <input
-            id="display_name"
-            name="display_name"
-            type="text"
-            placeholder="Display name (optional)"
-            value={profile.display_name ?? ''}
-            maxlength="60"
-          />
-          <button type="submit" class="btn">Save</button>
-        </form>
+        <HandleForm profile={profile} />
       </section>
+    )
+  }
+
+  {
+    isOwn && profile.handle_confirmed && (
+      <details class="edit-profile">
+        <summary>Edit profile</summary>
+        {handleError && <p class="notice" role="alert">{handleError}</p>}
+        <HandleForm profile={profile} />
+      </details>
     )
   }
 
@@ -171,20 +157,17 @@ const description = `${name}'s top threes on TopThree — ${topThrees.length} ${
   }
   .handle-nudge h2 { font-size: 1.05rem; }
 
-  .handle-form {
-    display: grid;
-    gap: 0.6rem;
-    margin-top: 1rem;
-    max-width: 22rem;
-  }
-  .handle-form .btn { justify-self: start; }
 
-  .handle-row {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
+  .edit-profile {
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
   }
-  .at { color: var(--muted); font-weight: 600; }
+  .edit-profile summary {
+    cursor: pointer;
+    color: var(--muted);
+    width: fit-content;
+  }
+  .edit-profile summary:hover { color: var(--text); }
 
   code {
     background: var(--surface-alt);

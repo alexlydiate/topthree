@@ -1,0 +1,53 @@
+---
+import type { Profile } from '../lib/types';
+
+interface Props {
+  profile: Profile;
+}
+
+const { profile } = Astro.props;
+---
+
+<form method="post" action="/api/handle" class="handle-form">
+  <input type="hidden" name="back" value={`/u/${profile.handle}`} />
+  <label class="visually-hidden" for="handle">Handle</label>
+  <div class="handle-row">
+    <span class="at" aria-hidden="true">@</span>
+    <input
+      id="handle"
+      name="handle"
+      type="text"
+      value={profile.handle}
+      pattern="[a-z0-9_]{3,20}"
+      maxlength="20"
+      required
+    />
+  </div>
+  <label class="visually-hidden" for="display_name">Display name</label>
+  <input
+    id="display_name"
+    name="display_name"
+    type="text"
+    placeholder="Display name (optional)"
+    value={profile.display_name ?? ''}
+    maxlength="60"
+  />
+  <button type="submit" class="btn">Save</button>
+</form>
+
+<style>
+  .handle-form {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    max-width: 22rem;
+  }
+  .handle-form .btn { justify-self: start; }
+
+  .handle-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .at { color: var(--muted); font-weight: 600; }
+</style>

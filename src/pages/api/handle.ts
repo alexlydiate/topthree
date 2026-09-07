@@ -28,8 +28,13 @@ export const POST: APIRoute = async ({ request, locals, redirect }) => {
   if (error) {
     const msg =
       error.code === '23505' ? 'That handle is taken.' : friendlyError(error);
+    // The handle did not change, so `back` is still a real URL.
     return redirect(`${back}?error=${encodeURIComponent(msg)}`, 303);
   }
 
-  return redirect(back, 303);
+  // `back` was rendered into the form before the change, so it still names the
+  // OLD handle -- following it lands on a profile that no longer exists. Send
+  // them to the address they just chose instead.
+  const destination = back.startsWith('/u/') ? `/u/${handle}` : back;
+  return redirect(destination, 303);
 };
