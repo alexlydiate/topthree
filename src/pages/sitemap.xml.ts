@@ -50,6 +50,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     urlEntry(origin, { path: '/c', lastmod: null }, 'daily', '0.9'),
     ...categories.map((c) => urlEntry(origin, c, 'daily', '0.8')),
     ...profiles.map((p) => urlEntry(origin, p, 'weekly', '0.5')),
+    urlEntry(origin, { path: '/contact', lastmod: null }, 'yearly', '0.2'),
   ];
 
   // The spec caps a single sitemap at 50,000 URLs / 50MB. Well beyond MVP
